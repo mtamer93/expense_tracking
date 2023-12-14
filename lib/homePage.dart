@@ -1,47 +1,37 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:expense_tracking/google_sign_in.dart';
+import 'package:expense_tracking/expense_model.dart';
+import 'package:expense_tracking/crud_operations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-class Expense {
-  final String title;
-  final double amount;
-  final String expenseType;
-  final String paymentMethod;
-  final String explanation;
-
-  Expense(
-      {required this.title,
-      required this.amount,
-      required this.expenseType,
-      required this.paymentMethod,
-      required this.explanation});
-}
+import 'package:expense_tracking/firestore_service.dart';
+import 'package:uuid/uuid.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.user});
+  const HomePage({super.key, required this.user, required this.userId});
 
   final User user;
+  final String userId;
 
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<Expense> expenses = [
-    Expense(
-        title: 'Groceries',
-        amount: 50.0,
-        expenseType: 'Yemek',
-        paymentMethod: 'Card',
-        explanation: 'Taze meyve ve sebze'),
-    Expense(
-        title: 'Dinner',
-        amount: 30.0,
-        expenseType: 'Yemek',
-        paymentMethod: 'Cash',
-        explanation: 'Lahmacun'),
-  ];
+  List<Expense> expenses = [];
+  String userToken = '';
+  String id = '';
+  String title = '';
+  double amount = 0;
+  String expenseType = '';
+  String explanation = '';
+  String paymentMethod = '';
+  Timestamp timestamp = Timestamp.now();
+  DateTime date = DateTime.now();
+
+  final CrudOperations _crudOperations = CrudOperations();
+  final FirestoreService _firestoreService = FirestoreService();
 
   double total = 80.0;
 
@@ -66,60 +56,93 @@ class _HomePageState extends State<HomePage> {
               ))
         ],
       ),
-      body: ListView.builder(
-        itemCount: expenses.length,
-        itemBuilder: (context, index) {
-          final expense = expenses[index];
-          return Card(
-            child: ListTile(
-              title: Wrap(
-                children: [
-                  Container(
-                      width: 240,
-                      child: Card(
-                        child: Text(expense.title),
-                      )),
-                ],
-              ),
-              subtitle: Wrap(
-                children: [
-                  Container(
-                      width: 240,
-                      height: 50,
-                      child: Card(
-                        child: Text(expense.explanation),
-                      )),
-                  Card(
-                      child: Text(
-                          '\$${expense.amount.toStringAsFixed(2)} - ${expense.paymentMethod} - ${expense.expenseType}'))
-                ],
-              ),
-              leading: Text(DateFormat('yyyy-MM-dd \n kk:mm')
-                  .format(DateTime.now())
-                  .toString()),
-              trailing: Wrap(
-                children: [
-                  new IconButton(
-                    icon: new Icon(Icons.update_rounded),
-                    onPressed: () {
-                      _addExpense(context, expenses[index], true, index);
-                    },
-                  ),
-                  new IconButton(
-                    icon: new Icon(Icons.delete),
-                    onPressed: () {
-                      _removeExpense(index);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+      body: FutureBuilder(
+          future: _firestoreService.getExpenses(), // Bunu kullanabilirsin
+          //future: _firestoreService.getExpenses2(widget.userId),
+          //future: _firestoreService.getExpenses3(widget.userId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return CircularProgressIndicator();
+            } else if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            } else {
+              List<Map<String, dynamic>> expenses =
+                  snapshot.data as List<Map<String, dynamic>>;
+              return ListView.builder(
+                itemCount: expenses.length,
+                itemBuilder: (context, index) {
+                  userToken = expenses[index]['userToken'];
+                  id = expenses[index]['id'];
+                  title = expenses[index]['title'];
+                  amount = expenses[index]['amount'];
+                  expenseType = expenses[index]['expenseType'];
+                  explanation = expenses[index]['explanation'];
+                  paymentMethod = expenses[index]['paymentMethod'];
+                  timestamp = expenses[index]['date'];
+                  date = timestamp.toDate();
+                  print('USERTOKEN: ${userToken}');
+                  print('\n\nUSERID: ${widget.userId}');
+                  if (userToken.substring(0, 102) ==
+                      widget.userId.substring(0, 102)) {
+                    return Card(
+                      child: ListTile(
+                        title: Wrap(
+                          children: [
+                            Container(
+                                width: 240,
+                                child: Card(
+                                  child: Text(title),
+                                )),
+                          ],
+                        ),
+                        subtitle: Wrap(
+                          children: [
+                            Container(
+                                width: 240,
+                                height: 50,
+                                child: Card(
+                                  child: Text(explanation),
+                                )),
+                            Card(
+                                child: Text(
+                                    '\$${amount.toStringAsFixed(2)} - ${paymentMethod} - ${expenseType}'))
+                          ],
+                        ),
+                        leading: Text(DateFormat('yyyy-MM-dd \n kk:mm')
+                            .format(expenses[index]['date'].toDate())
+                            .toString()),
+                        trailing: Wrap(
+                          children: [
+                            new IconButton(
+                              icon: new Icon(Icons.update_rounded),
+                              onPressed: () {
+                                _addExpense(context, true, 'update');
+                              },
+                            ),
+                            new IconButton(
+                              icon: new Icon(Icons.delete),
+                              onPressed: () {
+                                _removeExpense(id);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  } else if (expenses.length == 0) {
+                    return Center(
+                      child: Text('Lütfen bir gider ekleyiniz'),
+                    );
+                  } else {
+                    return null;
+                  }
+                },
+              );
+            }
+          }),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          _addExpense(context, null, false, -1);
+          _addExpense(context, false, 'add');
         },
         backgroundColor: Theme.of(context).primaryColor,
         label: Text(
@@ -134,50 +157,59 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _addExpense(
-      BuildContext context, Expense? expense, bool isUpdated, int index) async {
+  void _addExpense(BuildContext context, bool isUpdated, String choice) async {
     final result = await showDialog(
       context: context,
       builder: (context) => AddExpenseDialog(
-        exp: expense,
+        choice,
+        usr: widget.user,
       ),
     );
 
-    if (result != null && isUpdated == false) {
+    if (isUpdated == false) {
       // Eklemek için
       setState(() {
-        expenses.add(result);
-        total += expenses.last.amount;
+        _crudOperations.addExpense(result);
       });
-    } else if (result != null && isUpdated == true) {
+    } else if (isUpdated == true) {
       // Update için
       setState(() {
-        total -= expenses[index].amount;
-        expenses.removeAt(index);
-        expenses.add(result);
-        total += expenses.last.amount;
+        _crudOperations.deleteExpense(id);
+        _crudOperations.addExpense(result);
       });
     }
   }
 
-  void _removeExpense(int index) {
+  void _removeExpense(String id) {
     setState(() {
-      total -= expenses[index].amount;
-      expenses.removeAt(index);
+      _crudOperations.deleteExpense(id);
     });
+  }
+
+  Future<String?> getUserId() async {
+    String? s;
+    await widget.user.getIdToken().then((value) {
+      s = value;
+    });
+    return s;
   }
 }
 
 class AddExpenseDialog extends StatefulWidget {
-  const AddExpenseDialog({super.key, this.exp});
+  const AddExpenseDialog(String choice,
+      {super.key, this.isUpdate, this.exp, this.usr});
 
+  final String? isUpdate;
   final Expense? exp;
+  final User? usr;
 
   @override
   _AddExpenseDialogState createState() => _AddExpenseDialogState();
 }
 
 class _AddExpenseDialogState extends State<AddExpenseDialog> {
+  final textController = TextEditingController(text: Uuid().v4());
+
   TextEditingController _titleController = TextEditingController();
   TextEditingController _amountController = TextEditingController();
 
@@ -204,7 +236,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    if (widget.exp != null) {
+    if (widget.isUpdate == 'update') {
       _titleController.text = widget.exp!.title;
       _amountController.text = widget.exp!.amount.toString();
       _explanationController.text = widget.exp!.explanation;
@@ -289,6 +321,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                 InputDecoration.collapsed(hintText: "Enter your text here"),
             controller: _explanationController,
           ),
+          TextFormField(controller: textController),
         ],
       ),
       actions: [
@@ -299,25 +332,49 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
           child: Text('Cancel'),
         ),
         TextButton(
-          onPressed: () {
+          onPressed: () async {
             final title = _titleController.text;
             final amount = double.tryParse(_amountController.text);
             final expType = expenseType;
             final payMethod = paymentMethod;
             final expl = _explanationController.text;
+            final dt = DateTime.now();
+            final documentId = textController.text;
+            final usrTkn = await getUserId();
 
-            if (title.isNotEmpty && amount != null && expType != null) {
+            // if (widget.isUpdate == 'add') {
+            //   final uuid = Uuid();
+            //   documentId = uuid.v4();
+            // } else {
+            //   documentId = '';
+            // }
+
+            if (title.isNotEmpty &&
+                amount != null &&
+                expType != null &&
+                usrTkn != null) {
               Navigator.of(context).pop(Expense(
+                  id: documentId,
                   title: title,
                   amount: amount,
                   expenseType: expType,
                   paymentMethod: payMethod,
-                  explanation: expl));
+                  explanation: expl,
+                  userToken: usrTkn,
+                  date: dt));
             }
           },
           child: Text('Save'),
         ),
       ],
     );
+  }
+
+  Future<String?> getUserId() async {
+    String? s;
+    await widget.usr?.getIdToken().then((value) {
+      s = value;
+    });
+    return s;
   }
 }

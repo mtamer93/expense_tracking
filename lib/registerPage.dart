@@ -69,7 +69,13 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void handleHomePage(User user) async {
+    final userId = await user.getIdToken();
     Navigator.push(
-        context, MaterialPageRoute(builder: (context) => HomePage(user: user)));
+        context,
+        MaterialPageRoute(
+            builder: (context) => HomePage(
+                  user: user,
+                  userId: userId!,
+                )));
   }
 }

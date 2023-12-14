@@ -78,13 +78,16 @@ class _LoginPageState extends State<LoginPage> {
                               email: email,
                               password: password,
                             );
+                            final userId =
+                                await userCredential.user?.getIdToken();
                             print(
                                 'User logged in: ${userCredential.user?.email}');
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) =>
-                                        HomePage(user: userCredential.user!)));
+                                    builder: (context) => HomePage(
+                                        user: userCredential.user!,
+                                        userId: userId!)));
                           } catch (e) {
                             print('Login failed: $e');
                           }
@@ -228,14 +231,16 @@ class _LoginPageState extends State<LoginPage> {
   void handleLoginGoogle() async {
     final GoogleSignInProvider googleSignInProvider = GoogleSignInProvider();
     final User? user = await googleSignInProvider.signInWithGoogle();
+    final userId = await user?.getIdToken();
 
-    if (user != null) {
+    if (user != null && userId != null) {
       print('User signed in: ${user.displayName}');
       Navigator.push(
           context,
           MaterialPageRoute(
               builder: (context) => HomePage(
                     user: user,
+                    userId: userId,
                   )));
     } else {
       print('Sign-in failed');
