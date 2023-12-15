@@ -75,7 +75,7 @@ class _RegisterPageState extends State<RegisterPage> {
         MaterialPageRoute(
             builder: (context) => HomePage(
                   user: user,
-                  userId: userId!,
+                  userId: userId!.substring(0, 102),
                 )));
   }
 }

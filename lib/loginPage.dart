@@ -87,7 +87,7 @@ class _LoginPageState extends State<LoginPage> {
                                 MaterialPageRoute(
                                     builder: (context) => HomePage(
                                         user: userCredential.user!,
-                                        userId: userId!)));
+                                        userId: userId!.substring(0, 102))));
                           } catch (e) {
                             print('Login failed: $e');
                           }
@@ -240,7 +240,7 @@ class _LoginPageState extends State<LoginPage> {
           MaterialPageRoute(
               builder: (context) => HomePage(
                     user: user,
-                    userId: userId,
+                    userId: userId.substring(0, 102),
                   )));
     } else {
       print('Sign-in failed');

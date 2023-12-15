@@ -27,7 +27,7 @@ class Expense {
       'id': id,
       'paymentMethod': paymentMethod,
       'title': title,
-      'userToken': userToken,
+      'userToken': userToken.substring(0, 102),
     };
   }
 

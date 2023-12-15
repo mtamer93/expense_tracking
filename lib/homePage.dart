@@ -33,7 +33,41 @@ class _HomePageState extends State<HomePage> {
   final CrudOperations _crudOperations = CrudOperations();
   final FirestoreService _firestoreService = FirestoreService();
 
-  double total = 80.0;
+  double total = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    calculateTotalExpense();
+  }
+
+  Future<void> calculateTotalExpense() async {
+    try {
+      // Reference to the Firestore collection
+      CollectionReference expenses =
+          FirebaseFirestore.instance.collection('expenses');
+
+      // Query expenses with the given userId
+      QuerySnapshot querySnapshot =
+          await expenses.where('userToken', isEqualTo: widget.userId).get();
+
+      // Sum all the expense amounts
+      double sum = 0.0;
+      querySnapshot.docs.forEach((DocumentSnapshot document) {
+        sum += document['amount'] ?? 0.0;
+      });
+
+      setState(() {
+        total = sum;
+        FloatingActionButton.extended(
+            onPressed: () {}, label: Text('Total: \$${total}'));
+      });
+
+      print('Total Expense for user ${widget.userId}: $total');
+    } catch (e) {
+      print('Error calculating total expense: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -168,21 +202,25 @@ class _HomePageState extends State<HomePage> {
 
     if (isUpdated == false) {
       // Eklemek için
-      setState(() {
-        _crudOperations.addExpense(result);
-      });
+      await _crudOperations.addExpense(result);
     } else if (isUpdated == true) {
       // Update için
-      setState(() {
-        _crudOperations.deleteExpense(id);
-        _crudOperations.addExpense(result);
-      });
+      await _crudOperations.deleteExpense(id);
+      await _crudOperations.addExpense(result);
     }
+    setState(() {
+      calculateTotalExpense();
+      FloatingActionButton.extended(
+          onPressed: () {}, label: Text('Total: \$${total}'));
+    });
   }
 
-  void _removeExpense(String id) {
+  void _removeExpense(String id) async {
+    await _crudOperations.deleteExpense(id);
     setState(() {
-      _crudOperations.deleteExpense(id);
+      calculateTotalExpense();
+      FloatingActionButton.extended(
+          onPressed: () {}, label: Text('Total: \$${total}'));
     });
   }
 
@@ -360,7 +398,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                   expenseType: expType,
                   paymentMethod: payMethod,
                   explanation: expl,
-                  userToken: usrTkn,
+                  userToken: usrTkn.substring(0, 102),
                   date: dt));
             }
           },
