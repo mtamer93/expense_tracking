@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:expense_tracking/google_sign_in.dart';
-import 'package:expense_tracking/expense_model.dart';
-import 'package:expense_tracking/crud_operations.dart';
+import 'package:expense_tracking/pages/profilePage.dart';
+import 'package:expense_tracking/services/google_sign_in.dart';
+import 'package:expense_tracking/models/expense_model.dart';
+import 'package:expense_tracking/models/user_model.dart';
+import 'package:expense_tracking/services/crud_operations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:expense_tracking/firestore_service.dart';
+import 'package:expense_tracking/services/firestore_service.dart';
 import 'package:uuid/uuid.dart';
 
 class HomePage extends StatefulWidget {
@@ -32,6 +34,8 @@ class _HomePageState extends State<HomePage> {
 
   final CrudOperations _crudOperations = CrudOperations();
   final FirestoreService _firestoreService = FirestoreService();
+  UserModel userModel =
+      UserModel(uid: '', email: '', displayName: '', photoURL: '');
 
   double total = 0.0;
 
@@ -39,6 +43,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     calculateTotalExpense();
+    userModel = UserModel.fromFirebaseUser(widget.user);
   }
 
   Future<void> calculateTotalExpense() async {
@@ -73,9 +78,28 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Expense Tracker',
-          style: TextStyle(color: Colors.white),
+        title: Row(
+          children: [
+            InkWell(
+              child: CircleAvatar(
+                radius: 20,
+                backgroundImage: NetworkImage(userModel.photoURL),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(userModel: userModel),
+                  ),
+                );
+              },
+            ),
+            SizedBox(width: 10),
+            Text(
+              'Expense Tracker',
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
         ),
         backgroundColor: Color.fromRGBO(111, 61, 209, 1),
         actions: [
@@ -282,7 +306,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
       paymentMethod = widget.exp!.paymentMethod;
     } else {
       _titleController.text = 'Title';
-      _amountController.text = 'Amount';
+      _amountController.text = '';
     }
   }
 

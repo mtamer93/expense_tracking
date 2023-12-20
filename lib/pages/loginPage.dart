@@ -1,6 +1,6 @@
-import 'package:expense_tracking/google_sign_in.dart';
-import 'package:expense_tracking/homePage.dart';
-import 'package:expense_tracking/registerPage.dart';
+import 'package:expense_tracking/services/google_sign_in.dart';
+import 'package:expense_tracking/pages/homePage.dart';
+import 'package:expense_tracking/pages/registerPage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 

@@ -1,4 +1,4 @@
-import 'package:expense_tracking/homePage.dart';
+import 'package:expense_tracking/pages/homePage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 

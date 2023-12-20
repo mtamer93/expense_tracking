@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:expense_tracking/expense_model.dart';
+import 'package:expense_tracking/models/expense_model.dart';
 
 class CrudOperations {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

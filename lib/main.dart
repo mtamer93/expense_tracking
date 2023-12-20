@@ -1,4 +1,4 @@
-import 'package:expense_tracking/loginPage.dart';
+import 'package:expense_tracking/pages/loginPage.dart';
 // import 'package:expense_tracking/homePage2.dart';
 // import 'package:expense_tracking/homePage.dart';
 import 'package:firebase_core/firebase_core.dart';
